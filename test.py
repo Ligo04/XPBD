@@ -1,35 +1,18 @@
 import taichi as ti
 
-from Constraints import *
-
-ti.init()
-
-#pos=PositonConstaints.field()
-col=Constraints.field()
-# # col=CollisionConstraint.field()
-# # joints=JointsConstraint.field()
-
-root=ti.root.dense(ti.i,1)
-tree=root.dynamic(ti.j,1024)
-tree.place(col)
-
-
-# # for i in range(3):
-# #     pos1=PositonConstaints()
-# #     ti.append(constraintTree,i,pos1)
-# # constraintTree.dynamic(PositonConstaints,)
-
-@ti.func
-def test(c:ti.template()):
-    c.jointType =1 
+ti.init(arch=ti.cpu, kernel_profiler=True)
+x = ti.field(ti.f32, shape=1024*1024)
 
 @ti.kernel
-def init():
-    col1 = Constraints()
-    ti.append(tree,0,col1)
-    for i in ti.grouped(col):
-        print(i)
-        test(col[i])
-        print(col[i].jointType)
-    
-init()
+def fill():
+    for i in x:
+        x[i] = i
+
+for i in range(8):
+    fill()
+ti.profiler.print_kernel_profiler_info('trace')
+ti.profiler.clear_kernel_profiler_info()  # Clears all records
+
+for i in range(100):
+    fill()
+ti.profiler.print_kernel_profiler_info()  # The default mode: 'count'

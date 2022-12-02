@@ -5,13 +5,14 @@ from Transform import *
 @ti.dataclass
 class Entity:
     invMass:ti.f32
+    fixed:ti.i32         #0:dynamic   #1:fixed
     #curr state
     invInertia:tm.vec3
     transform:Transform
     vec:tm.vec3
-    omege:tm.vec3
+    omega:tm.vec3
     #last state
-    prevTarnsform:Transform
+    prevTransform:Transform
     #coefficient
     staticFricCoeff:ti.f32
     dynamicFircCoeff:ti.f32
@@ -73,5 +74,5 @@ class Entity:
         iDeltaOmega= iMatrix @ deltaOmega
         deltaOmega = tm.vec3(iDeltaOmega.x,iDeltaOmega.y,iDeltaOmega.z)
 
-        self.omege += deltaOmega
+        self.omega += deltaOmega
     

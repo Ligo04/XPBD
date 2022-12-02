@@ -110,15 +110,15 @@ class Model:
 
 @ti.data_oriented
 class RigidBody:
-    def __init__(self,model,position,mass,inertia=tm.vec3(1,1,1),vec=tm.vec3(0,0,0),
+    def __init__(self,model,position,mass,fixed=0,inertia=tm.vec3(1,1,1),vec=tm.vec3(0,0,0),
                     omega=tm.vec3(0,0,0),staticFric=0,dynmanicFric=0,restitutionC=0) -> None:
         self.model = model
         self.vectices =  ti.Vector.field(3, dtype=ti.f32, shape= self.model.vertex_num[None])
-        self.entity = RigidBody.CreateEntity(position,mass,inertia,vec,omega,staticFric,dynmanicFric,restitutionC)
+        self.entity = RigidBody.CreateEntity(position,mass,fixed,inertia,vec,omega,staticFric,dynmanicFric,restitutionC)
 
     @ti.kernel
     def GetWorlMatrix(self)->tm.mat4:
-        return self.entity.transform.GetWorldMatrix()
+        return self.entity[None].transform.GetWorldMatrix()
 
     def GetSceneData(self,matrix=None):
         if matrix is None:
@@ -129,18 +129,19 @@ class RigidBody:
         return self.vectices,self.model.indices,color
 
     @staticmethod
-    def CreateEntity(position,mass,inertia=tm.vec3(1,1,1),
+    def CreateEntity(position,mass,fixed=0,inertia=tm.vec3(1,1,1),
                 vec=tm.vec3(0,0,0),omega=tm.vec3(0,0,0),staticFric=0,dynmanicFric=0,restitutionC=0):
-        data = Entity()
-        data.invMass = 1.0 / mass
-        data.invInertia = tm.vec3(1/inertia[0],1/inertia[1],1/inertia[2])
+        data = Entity.field(shape=())
+        data[None].fixed = fixed
+        data[None].invMass = 1.0 / mass
+        data[None].invInertia = tm.vec3(1/inertia[0],1/inertia[1],1/inertia[2])
         wolrdTranform = Transform(position,Quaterion.Identity(),tm.vec3(1,1,1))
-        data.transform = wolrdTranform
-        data.vec =vec
-        data.omega= omega
-        data.staticFricCoeff = staticFric
-        data.dynamicFircCoeff = dynmanicFric
-        data.restitutionCoeff = restitutionC
+        data[None].transform = wolrdTranform
+        data[None].vec =vec
+        data[None].omega= omega
+        data[None].staticFricCoeff = staticFric
+        data[None].dynamicFircCoeff = dynmanicFric
+        data[None].restitutionCoeff = restitutionC
         return data
 
 

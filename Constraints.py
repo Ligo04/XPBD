@@ -12,7 +12,7 @@ class Constraints:
 
     compliance:ti.f32
     #pos constraint
-    maxDistance:tm.vec3
+    maxDistance:ti.f32
     lambda_total:ti.f32
 
     #collision constraint
