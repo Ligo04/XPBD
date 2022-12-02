@@ -1,7 +1,7 @@
 import taichi as ti
 import taichi.math as tm
 import math
-from RigidBody import *
+from Entity import *
 from Constraints import *
 from model import *
 
@@ -10,39 +10,33 @@ gravity=tm.vec3(0.0,-9.8,0.0)
 
 @ti.data_oriented
 class XPBDSolver:
-    deltaTime = 0.0
-    bodyField = None
-    posConstraintFiled = None
-    joinsConstraintFiled = None
-    colConstraintFiled = None
+    def __init__(self,timestep:ti.f32,numSubStep:ti.f32,entities:ti.template()) -> None:
+        self.timeStep = timestep
+        self.numSubSteps = numSubStep
+        self.deltaTime = timestep / numSubStep          #h
+        self.entityField = entities      
+        self.constraintField = Constraints.field()
+        self.constaintSnode = ti.root.dense(ti.i,1).dynamic(ti.j,1024)      #max constraint:1024
+        self.constaintSnode.place(self.constraintField)
 
-    def __init__(self) -> None:
+    #0: pos 1:joints  2:collision
+    def InitConstraint(self,constraint):
         pass
-
-    @ti.kernel
-    def InitSolverData(self,rigibody:ti.template()):
-        self.bodyField = rigibody
-
-    def AddConstraint(self,type:ti.i32,constraint:ti.template()):
-        pass
-
-    def InitConstraint():
-        pass
-
+        
     #lambda
     @staticmethod
     @ti.func
     def GetPositionDeltaLambda(body1:ti.template(),body2:ti.template(),r1:tm.vec3,r2:tm.vec3,
                 dt:ti.f32,corr:tm.vec3,compliance:ti.f32,lambda_total:ti.f32) -> ti.f32:
         #get generalized inverse mass
-        normal = tm.normalize(corr)
-        c = tm.length(corr)
+        normal = corr.normalized()
+        c = corr.norm()
 
         w1 = body1.GetGeneralizedInvMass(normal,r1)
         w2 = body2.GetGeneralizedInvMass(normal,r2)
 
         #small step
-        lambdaCompliance= compliance / (dt**2)
+        lambdaCompliance = compliance / (dt**2)
         dlambda = (-c -lambdaCompliance * lambda_total ) / (w1+w2+lambdaCompliance)
 
         return dlambda
@@ -55,11 +49,15 @@ class XPBDSolver:
         axis=tm.normalize(corr)
         magnitude=tm.length(corr)
 
-        w1I=body1.invInertia
-        w1=tm.vec3(axis[0]*axis[0]*w1I[0],axis[1]*axis[1]*w1I[1],axis[2]*axis[2]*w1I[2])
+        iMatrix1=tm.mat3(body1.invInertia.x,0.0,0.0,
+                        0.0,body1.invInertia.y,0.0,
+                        0.0,0.0,body1.invInertia.z)
+        w1= axis.transpose() @ iMatrix1 @ axis
 
-        w2I=body2.invInertia
-        w2=tm.vec3(axis[0]*axis[0]*w2I[0],axis[1]*axis[1]*w2I[1],axis[2]*axis[2]*w2I[2])
+        iMatrix2=tm.mat3(body2.invInertia.x,0.0,0.0,
+                        0.0,body2.invInertia.y,0.0,
+                        0.0,0.0,body2.invInertia.z)
+        w2 = axis.transpose() @ iMatrix2 @ axis
 
         #small step
         lambdaCompliance = compliance/(dt**2)
@@ -71,7 +69,7 @@ class XPBDSolver:
     @ti.func
     def ApplyPosConstraintPair(self,body0:ti.template(),body1:ti.template(),r1:tm.vec3,r2:tm.vec3,corr:tm.vec3,delta_lamba:ti.f32):
         
-        normal = tm.normalize(corr)
+        normal = corr.normalized()
         delta_p = delta_lamba * normal
 
         body0.ApplyPosCorrection(delta_p,r1)
@@ -81,13 +79,13 @@ class XPBDSolver:
     @ti.func
     def ApplyRotConstraintPair(body0:ti.template(),body1:ti.template(),corr:tm.vec3,delta_lamba:ti.f32):
         #get generalized inverse mass
-        magnitude=tm.length(corr)
+        magnitude = corr.normalized()
         corr= delta_lamba * magnitude          #p=lambda * n
         body0.ApplRotationCorrection(corr)
         body1.ApplRotationCorrection(corr)
 
     @ti.kernel
-    def Simforecast(self,gravity:ti.f32,moment_ext:tm.vec3):
+    def preSolve(self,gravity:ti.f32,moment_ext:tm.vec3):
         for i in ti.grouped(self.bodyField):
             #prev
             self.bodyField[i].prevTransform = self.bodyField[i].transform
@@ -97,9 +95,9 @@ class XPBDSolver:
             #clac omega
             currOmega=self.bodyField[i].omega
             currinvInertia=self.bodyField[i].invInertia
-            l=tm.vec3(currOmega[0]/currinvInertia[0],currOmega[1]/currinvInertia[1],currOmega[2]/currinvInertia[2])   #L=Iw
+            l = currOmega / currinvInertia
             tau = moment_ext - tm.cross(currOmega,l)
-            dw=tm.vec3(currinvInertia[0]*tau[0],currinvInertia[1]*tau[1],currinvInertia[2]*tau[2])
+            dw = currinvInertia + tau
             self.bodyField[i].omega += self.deltaTime * dw
             
             currOmega = self.bodyField[i].omega
@@ -114,7 +112,7 @@ class XPBDSolver:
 
              qinv=Quaterion.Conjugate(self.bodyField[i].transform.rotation)
              dq=Quaterion.Multiply(self.bodyField[i].transform.rotation,qinv)
-             omege=(2*tm.vec3(dq[0],dq[1],dq[2])) / self.deltaTime
+             omege = (2*tm.vec3(dq.xyz)) / self.deltaTime
              if dq.w>0 :
                 self.bodyField[i].omega = omege
              else:
@@ -124,8 +122,17 @@ class XPBDSolver:
    #*********************Constrain Solver**************************************
     @ti.kernel
     def SolveConstraint(self):
-        #constraint solver
-        pass
+        for i in ti.grouped(self.constraintField):
+            #pos constraint
+            if self.constraintField[i].conType == 0:
+                self.SolvePosConstraint(self.constraintField[i])
+            #collision constraint
+            elif self.constraintField[i].conType == 1:
+                self.SolveCollision(self.constraintField[i])
+            #joint constraints
+            elif self.constraintField[i].conType == 2:
+                self.SolveJointsConstraint(self.constraintField[i])
+        
         
                     
     @ti.func
@@ -135,13 +142,13 @@ class XPBDSolver:
             q1= body1.transform.rotation
             q2= body2.transform.rotation
             #fixed joints
-            if jointsConstraint.type == 0:
+            if jointsConstraint.jointType == 0:
                 q2Inv = Quaterion.Conjugate(q2)
                 
-                dq=Quaterion.Multiply(q1,q2Inv)
-                omega=tm.vec3(2.0*dq[0],2.0*dq[1],2.0*dq[2])
-                if omega.w < 0.0:
-                    omega=-omega
+                dq = Quaterion.Multiply(q1,q2Inv)
+                omega = 2.0 * dq.xyz
+                if dq.w < 0.0:
+                    omega = - omega
 
                 delta_lambda = XPBDSolver.GetRotationDeltaLambda(body1,body2,self.deltaTime,omega,
                                                 jointsConstraint.compliance,jointsConstraint.lambda_total)
@@ -149,12 +156,12 @@ class XPBDSolver:
                 jointsConstraint.lambda_total += delta_lambda
 
             #hinge joints
-            elif jointsConstraint.type == 1:
+            elif jointsConstraint.jointType == 1:
                 a0=Quaterion.GetQuatAixs0(q1)
                 a1=Quaterion.GetQuatAixs0(q2)
                 
                 #align
-                dQhinge=tm.cross(a0,a1)
+                dQhinge = tm.cross(a0,a1)
                 delta_lambda = XPBDSolver.GetRotationDeltaLambda(body1,body2,self.deltaTime,dQhinge,
                                                 jointsConstraint.compliance,jointsConstraint.lambda_total)
                 self.ApplyRotConstraintPair(body1,body2,dQhinge,delta_lambda)
@@ -178,7 +185,7 @@ class XPBDSolver:
 
 
             #spherical
-            elif jointsConstraint.type == 2:
+            elif jointsConstraint.jointType == 2:
                 #swing limits
                 if jointsConstraint.hasSwingLimit == 1:
                     a1=Quaterion.GetQuatAixs0(q1)
@@ -353,21 +360,32 @@ class XPBDSolver:
         else:
             return None
 
-    #after data init
-    def Simulate(self,timestep:ti.f32,numSubsteps:ti.i32,gravity:tm.vec3):
+    #set iterter nnum
+    def SetDtAndNumsubStep(self,timestep,numsubsteps):
+        self.timeStep=timestep
+        self.numSubSteps=numsubsteps
 
-        self.deltaTime = timestep/numSubsteps
-        #collision detect
-        
-        for h in range(numSubsteps):
-            #prev pos
-            self.Simforecast(gravity,tm.vec3(0.0,0.0,0.0))
-            #constraint rigid body
-            self.SolveConstraint()
-            #get vec
-            self.UpdateAfterSolve()
-            #solve vecolity
-            self.SolveVelocity()
+    #after data init
+    def Simulate(self):
+        if self.numSubSteps > 0:
+            self.deltaTime = self.timeStep/self.numSubSteps
+            #collision detect(board-phase)
+            for times in range(self.numSubSteps):
+                #prev pos
+                self.preSolve(gravity,tm.vec3(0.0,0.0,0.0))
+                #constraint rigid body
+                self.SolveConstraint()
+                #get vec
+                self.UpdateAfterSolve()
+                #solve vecolity
+                self.SolveVelocity()
+
+    #return world matrix
+    @ti.kernel
+    def GetSolveredData(self,worldMatrixFiled:ti.template()):
+        for i in ti.grouped(self.bodyField):
+            worldMatrixFiled[i] = self.bodyField[i].transform.GetWorldMatrix()
+
 
     
 
