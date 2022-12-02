@@ -49,7 +49,7 @@ class Model:
 
     #get normal
     def GetNormal(self):
-
+        pass
 
     @ti.kernel
     def Gettransform(self, transform :ti.template(),vertices:ti.template()):
