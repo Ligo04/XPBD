@@ -43,6 +43,10 @@
   - 成员：逆质量，逆转动惯量，transfrom（当前，上一帧），速度，角速度，静摩擦，动摩擦力，修复系数，
   - 函数：应用位置修正，应用旋转修正，应用速度修正，后去广义逆质量
   
+- Model类型（ti.data_oriented）：加载obj模型
+  
+- Rigiboody类（ti.data_oriented）: 包含一个Model 以及 一个Enitiy
+  
 - Constarint类（ti.dataclass）：用于表示需要进行约束：
 
   - 位置约束：最大位置
@@ -73,7 +77,8 @@
 
 目前打算使用的TAICHIGAME的开源库进行碰撞检测，但是他有个问题计算太慢了（没有采用taichi加速）
 
-## 开源库
+## 使用的开源库
 
+- model类：https://github.com/MicroappleMA/path_tracing_obj/blob/master/path_tracing_obj.py
 - 四元数函数：https://github.com/Yihao-Shi/TaichiDEM/blob/version-updated/Quaternion.py
 

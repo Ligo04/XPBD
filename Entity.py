@@ -32,7 +32,7 @@ class Entity:
                         0.0,0.0,invInertia.z)
         wI = rn.transpose() @ iMatrix @ rn
 
-        w=self.invMass+wI
+        w = self.invMass+wI
 
         return w
         
@@ -53,7 +53,7 @@ class Entity:
     
     @ti.func
     def ApplyPosCorrection(self,corr:tm.vec3,r:tm.vec3):
-        
+
         self.transform.position += corr * self.invMass
         invInertia = self.invInertia
         iMatrix=tm.mat3(invInertia.x,0.0,0.0,

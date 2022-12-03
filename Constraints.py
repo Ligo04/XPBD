@@ -69,7 +69,7 @@ class Constraints:
         self.r2= r2
         self.compliance = compliance
 
-    def InitHingeConstraint(self,body1Id:ti.i32,body2Id:ti.i32,r1:tm.vec3,r2:tm.vec3,
+    def InitHingeConstraint(self,body1Id:ti.i32,body2Id:ti.i32,r1:tm.vec3,r2:tm.vec3,compliance:ti.f32,
                     hasSwingLimit:ti.i32,
                     minSwingAngle:ti.f32,
                     maxSwingAngle:ti.f32,
@@ -82,6 +82,7 @@ class Constraints:
 
         self.r1= r1
         self.r2= r2
+        self.compliance = compliance
         self.hasSwingLimit=hasSwingLimit
         self.minSwingAngle=minSwingAngle
         self.maxSwingAngle=maxSwingAngle

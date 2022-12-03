@@ -156,8 +156,7 @@ class XPBDSolver:
                 self.SolvePosConstraint(self.constraintField[i],dt)
             #collision constraint
             elif self.constraintField[i].conType == 1:
-                pass
-                #self.SolveCollision(self.constraintField[i],dt)
+                self.SolveCollision(self.constraintField[i],dt)
             #joint constraints
             elif self.constraintField[i].conType == 2:
                 self.SolveJointsConstraint(self.constraintField[i],dt)
@@ -198,7 +197,7 @@ class XPBDSolver:
                                                 jointsConstraint.compliance,jointsConstraint.lambda_total)
                     self.ApplyRotConstraintPair(body1,body2,dQhinge,delta_lambda)
                 
-                #jointsConstraint.lambda_total += delta_lambda
+                    jointsConstraint.lambda_total += delta_lambda
 
                 if jointsConstraint.hasSwingLimit == 1:
                     #update the quaterion
@@ -213,7 +212,7 @@ class XPBDSolver:
                         delta_lambda = XPBDSolver.GetRotationDeltaLambda(body1,body2,dt,dQlimit,
                                                 jointsConstraint.compliance,jointsConstraint.lambda_total)
                         self.ApplyRotConstraintPair(body1,body2,dQlimit,delta_lambda)
-                        #jointsConstraint.lambda_total += delta_lambda
+                        jointsConstraint.lambda_total += delta_lambda
 
 
             #spherical
@@ -233,7 +232,7 @@ class XPBDSolver:
                         delta_lambda = XPBDSolver.GetRotationDeltaLambda(body1,body2,dt,dQlimit,
                                                 jointsConstraint.compliance,jointsConstraint.lambda_total)
                         self.ApplyRotConstraintPair(body1,body2,dQlimit,delta_lambda)
-                        #jointsConstraint.lambda_total += delta_lambda
+                        jointsConstraint.lambda_total += delta_lambda
 
                 #twist limits
                 if jointsConstraint.hasTwistLimit == 1:
@@ -262,7 +261,7 @@ class XPBDSolver:
                         delta_lambda = XPBDSolver.GetRotationDeltaLambda(body1,body2,dt,dQlimit,
                                                 jointsConstraint.compliance,jointsConstraint.lambda_total)
                         self.ApplyRotConstraintPair(body1,body2,dQlimit,delta_lambda)
-                        #jointsConstraint.lambda_total += delta_lambda
+                        jointsConstraint.lambda_total += delta_lambda
 
     @ti.func
     def SolvePosConstraint(self,posConstraint:ti.template(),dt:ti.f32):
