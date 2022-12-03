@@ -2,50 +2,104 @@ import taichi as ti
 import time as time
 from XPBDSolver import *
 
+ti.init(arch=ti.gpu,offline_cache=True,kernel_profiler=True)
 WIDTH=1280
 HEIGHT=720
 timeStep = 1.0 / 60 
-numSubSteps = 20
+numSubSteps = 5
 
+#
+center_x = tm.vec3(0,0,0)
+
+numBoxes = 2
+numPendulum = 2
+initPos = tm.vec3(0,2,0)
 #solver rigid body data
 bodyList=[]
+entities=[]
 constraintList=[]
 
+
 #init scene
-def InitBoxHingeScene(numBoxes,masses,initPos=tm.vec3(0,0,0),detla_x=0):
+def IniBodyChainScene(numBoxes,masses,initPos=tm.vec3(0,0,0),detla_x=0):
+    pos = initPos
     #init floor
     floorModel = Model("models/floor.obj",color=(0.5,0.5,0.5))
-    floor = RigidBody(floorModel,tm.vec3(0,-1,0),1.0,fixed=1)
+    floor = RigidBody(tm.vec3(0,-1,0),1.0,floorModel,fixed=1)
     bodyList.append(floor)
+    entities.append(floor.entity)
     #init box
     boxModel = Model("models/box.obj",color=(0.5,0.5,0.5))
+    bodyIdStart = len(bodyList)
+    compliance= 0.01
+    maxdistance = 1.0
+    #add shpere
     for i in range(numBoxes):
-        pos = initPos + tm.vec3(detla_x*i,0,0)
+        pos = pos + tm.vec3(0,detla_x,0)
         mass = masses[i]
-        body = RigidBody(boxModel,pos,mass,inertia = RigidBody.GetBoxInertia(mass,1,1,1))
+        body = RigidBody(pos,mass,boxModel,inertia = RigidBody.GetBoxInertia(mass,1,1,1))
         bodyList.append(body)
+        entities.append(body.entity)
+        
+        #add top shpere
+        if i == numBoxes-1:
+            spherePos = pos + tm.vec3(0.0,detla_x *2 ,0.0)
+            sphere = RigidBody(spherePos,1.0,fixed=1)
+            bodyList.append(sphere)
+            entities.append(sphere.entity)
+            
+        
+    for i in range(numBoxes):
+        body1Id = bodyIdStart
+        body2Id = body1Id + 1
+        bodyIdStart = body2Id
+
+        constraint = Constraints.field(shape=())
+        constraint[None].InitPosConstraint(body1Id,body2Id,center_x,center_x,maxdistance,compliance)
+        constraintList.append(constraint)
+
 
 #init scene data
-def InitPendulumScene(numPendulum,initPos=tm.vec3(0,0,0)):
+def InitPendulumScene(numPendulum,initPos=tm.vec3(0,0,0),delta_x = 0.6):
+    pos = initPos
     #init floor
-    floorModel = Model("models/lever.obj",color=(0.5,0.5,0.5))
-    floor = RigidBody(floorModel,tm.vec3(0,0,0),1000.0)
-    staticBodyList.append(floor)
+    floorModel = Model("models/floor.obj",color=(0.5,0.5,0.5))
+    floor = RigidBody(tm.vec3(0,-1,0),1.0,floorModel,fixed=1)
+    bodyList.append(floor)
+    entities.append(floor.entity)
     lever = Model("models/lever.obj",color=(0.5,0.5,0.5))
+    bodyIdStart = len(bodyList)
+    compliance= 0.01
+    maxdistance = 0.1
     for i in range(numPendulum):
-        pos = initPos + tm.vec3(0,0.65*i,0)
-        body= RigidBody(lever,pos,1.0,RigidBody.GetBoxInertia(1.0,0.6,0.1,0.1))
-        rigidBodyList.append(body)
+        pos += tm.vec3(0,delta_x + maxdistance ,0)
+        body = RigidBody(pos,1.0,lever,inertia=RigidBody.GetBoxInertia(1.0,0.1,0.6,0.1))
+        bodyList.append(body)
+        entities.append(body.entity)
+                #add top shpere
+        if i == numPendulum - 1:
+            spherePos = pos + tm.vec3(0.0,delta_x / 2 + maxdistance ,0.0)
+            sphere = RigidBody(spherePos,1.0,fixed=1)
+            bodyList.append(sphere)
+            entities.append(sphere.entity)
 
-    # vertices,indices,color = boxes.GetSceneMeshData()
-    # entityList.append(body)
-    #load model
+        body1Id = bodyIdStart
+        body2Id = body1Id + 1
+        bodyIdStart = body2Id
+        
+        #pos constraint
+        constraint = Constraints.field(shape=())
+        constraint[None].InitPosConstraint(body1Id,body2Id,center_x,center_x,maxdistance,compliance)
+        constraintList.append(constraint)
+
+        #joint constraint
+        constraint = Constraints.field(shape=())
+        constraint[None].InitHingeConstraint(body1Id,body2Id,center_x,center_x,1,0.0,math.pi,compliance)
+        constraintList.append(constraint)
 
 #init xpbdSolver
 def InitXPBDSolver():
-    xpbd = XPBDSolver(timeStep,numSubSteps)
-    for i in range(len(bodyList)):
-        xpbd.AddEntity(bodyList[i].entity)
+    xpbd = XPBDSolver(timeStep,numSubSteps,entities)
     for i in range(len(constraintList)):
         xpbd.AddStraint(constraintList[i])
     return xpbd
@@ -59,19 +113,22 @@ if __name__ == '__main__':
     camera = ti.ui.Camera()
     camera.z_far(1000.0)
     camera.z_near(1.0)
-    camera.position(0.0, 2.5, -5.0)
+    camera.position(0.0, 4.0, 2.0)
+    camera.lookat(0.0,4.0,0.0)
     #init scene mesh
     #InitPendulumScene(2)
-    masses = [1.0,1.0,1.0,1.0,1.0]
-    InitBoxHingeScene(1,masses,initPos=tm.vec3(0,4,0),detla_x= 2.0)
+    masses = []
+    for i in range(numBoxes):
+        masses.append(10.0)
+    #IniBodyChainScene(numBoxes,masses,initPos=tm.vec3(0,1,0),detla_x = 1.2)
+    InitPendulumScene(numPendulum,initPos)
     #init XPBDSolver
     xpbd = InitXPBDSolver()
-    
     frame = 0
     #main loop
     while window.running:
-        camera.track_user_inputs(window, movement_speed=0.03, hold_key=ti.ui.RMB)
         scene.set_camera(camera)
+        camera.track_user_inputs(window, movement_speed=0.03, hold_key=ti.ui.RMB)
         scene.ambient_light((0.7,0.7,0.7))
         scene.point_light(pos=(0, 10, 0), color=(1.0,1.0,1.0))
 
@@ -80,12 +137,17 @@ if __name__ == '__main__':
         #logic tick
         xpbd.Solver()
         worldMatData=xpbd.GetSolverData()
-        ###################################  render tick  #################################33
+        ###################################  render tick  ####################################
         #add mesh to sence(entities)
         for i in range(len(bodyList)):
             worldM = worldMatData[0,i]
-            vertices,indices,color = bodyList[i].GetSceneData(worldM)
-            scene.mesh(vertices,indices,color=color)
+            if bodyList[i].model == None:
+                print(bodyList[i].worldVectices)
+                scene.particles(bodyList[i].worldVectices,0.05)
+            else:    
+                vertices,indices,normals,color = bodyList[i].GetSceneData(worldM)
+                scene.mesh(vertices,indices,normals=normals,color=color)
+        
 
         end_time = time.time()
         print(f"frame: {frame}, time={(end_time - start_time)*1000:03f}ms")
@@ -93,7 +155,9 @@ if __name__ == '__main__':
         window.show()
         frame +=1
 
+        # if frame==2:
+        #      window.running = False
+
 
 
 #ti.profiler.print_kernel_profiler_info()  # The default mode: 'count'
-

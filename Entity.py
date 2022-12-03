@@ -17,7 +17,12 @@ class Entity:
     staticFricCoeff:ti.f32
     dynamicFircCoeff:ti.f32
     restitutionCoeff:ti.f32
-        
+
+    #XPBD
+    dp_p:tm.vec3
+    dp_r:tm.vec3
+    r:tm.vec3
+
     @ti.func
     def GetGeneralizedInvMass(self,normal:tm.vec3,r:tm.vec3) -> ti.f32:
         rn = tm.cross(r,normal)
@@ -48,8 +53,8 @@ class Entity:
     
     @ti.func
     def ApplyPosCorrection(self,corr:tm.vec3,r:tm.vec3):
-        self.transform.position += corr*self.invMass
-
+        
+        self.transform.position += corr * self.invMass
         invInertia = self.invInertia
         iMatrix=tm.mat3(invInertia.x,0.0,0.0,
                         0.0,invInertia.y,0.0,
