@@ -90,6 +90,7 @@ class Constraints:
         self.r1= r1
         self.r2= r2
         self.maxDistance = maxDistance
+        self.axes =axes
         self.jointCompliance = compliance
         self.hasSwingLimit=hasSwingLimit
         self.minSwingAngle=minSwingAngle

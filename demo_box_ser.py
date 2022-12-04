@@ -2,7 +2,7 @@ import taichi as ti
 import time as time
 from XPBDSolver import *
 
-ti.init(arch=ti.gpu,offline_cache=True,kernel_profiler=True)
+ti.init(arch=ti.cpu,offline_cache=True,kernel_profiler=True,cpu_max_num_threads=1)
 WIDTH=1280
 HEIGHT=720
 timeStep = 1.0 / 60 
@@ -63,7 +63,7 @@ def InitXPBDSolver():
         
 
 if __name__ == '__main__':
-    window = ti.ui.Window("XPBD with rigid body simulation", (WIDTH, HEIGHT))
+    window = ti.ui.Window("XPBD with rigid body simulation(serial)", (WIDTH, HEIGHT))
     canvas = window.get_canvas()
     scene = ti.ui.Scene()
     #init camera
@@ -112,14 +112,13 @@ if __name__ == '__main__':
             else:    
                 vertices,indices,normals,color = bodyList[i].GetSceneData(worldM)
                 scene.mesh(vertices,indices,normals=normals,color=color)
-    
+        
+
         # end_time = time.time()
         # print(f"frame: {frame}, time={(end_time - start_time)*1000:03f}ms")
         canvas.scene(scene)
         window.show()
         frame +=1
-
-    ti.profiler.print_kernel_profiler_info()
 
 
 

@@ -127,7 +127,8 @@ class RigidBody:
 
     @ti.kernel
     def SetRotationLocationZ(self,radians:ti.f32) :
-        axis = self.entity[None].transform.GetWorldMatrix() @ tm.vec4(0,0,1,0)
+        axis = self.entity[None].transform.GetWorldMatrix() @ tm.vec4(1,0,0,0)
+        print(f"aixs:{axis.x},{axis.y},{axis.z},{axis.z}")
         q = Quaterion.SetFromAxisAngle(axis.xyz,radians)
         self.entity[None].transform.rotation = q
 

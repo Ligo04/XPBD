@@ -140,7 +140,7 @@ class XPBDSolver:
    #*********************Constrain Solver**************************************
     @ti.kernel
     def SolveConstraint(self,dt:ti.f32):
-        ti.loop_config(serialize=True)
+        #ti.loop_config(serialize=True)
         for i in ti.grouped(self.constraintField):
             #pos constraint
             if self.constraintField[i].conType == 0:
@@ -154,7 +154,14 @@ class XPBDSolver:
                 print("joints constraint solver:")
                 self.SolveJointsConstraint(self.constraintField[i],dt)
 
-        
+    @ti.kernel
+    def ApplyDelteLambda(self):
+        for i in ti.grouped(self.entityField):
+            if self.entityField[i].delta_pos.norm() != 0:
+                self.entityField[i].transform.position += self.entityField[i].delta_pos
+            if self.entityField[i].delta_rot.norm() != 0:
+                self.entityField[i].transform.rotation += self.entityField[i].delta_rot
+                self.entityField[i].transform.rotation = Quaterion.Normalized(self.entityField[i].transform.rotation)
                     
     @ti.func
     def SolveJointsConstraint(self,jointsConstraint:ti.template(),dt:ti.f32):
@@ -208,51 +215,51 @@ class XPBDSolver:
                         self.ApplyRotCorrectionPair(jointsConstraint.body1Id,jointsConstraint.body2Id,dQlimit,delta_lambda) 
 
             #spherical
-            elif jointsConstraint.jointType == 2:
-                #swing limits
-                if jointsConstraint.hasSwingLimit == 1:
-                    a1=Quaterion.GetQuatAixs0(q1)
-                    a2=Quaterion.GetQuatAixs0(q2)
+            # elif jointsConstraint.jointType == 2:
+            #     #swing limits
+            #     if jointsConstraint.hasSwingLimit == 1:
+            #         a1=Quaterion.GetQuatAixs0(q1)
+            #         a2=Quaterion.GetQuatAixs0(q2)
 
-                    n=tm.cross(a1,a2)
-                    n=tm.normalize(n)
-                    dQlimit = XPBDSolver.limitAngle(n,a1,a2,
-                      jointsConstraint.minSwingAngle,jointsConstraint.maxSwingAngle)
-                    if dQlimit.norm() > 0:
-                        delta_lambda = self.GetRotationDeltaLambda(jointsConstraint.body1Id,jointsConstraint.body2Id,dt,dQlimit,
-                                                jointsConstraint.compliance,jointsConstraint.lambda_total)
+            #         n=tm.cross(a1,a2)
+            #         n=tm.normalize(n)
+            #         dQlimit = XPBDSolver.limitAngle(n,a1,a2,
+            #           jointsConstraint.minSwingAngle,jointsConstraint.maxSwingAngle)
+            #         if dQlimit.norm() > 0:
+            #             delta_lambda = self.GetRotationDeltaLambda(jointsConstraint.body1Id,jointsConstraint.body2Id,dt,dQlimit,
+            #                                     jointsConstraint.compliance,jointsConstraint.lambda_total)
 
-                        self.ApplyRotCorrectionPair(jointsConstraint.body1Id,jointsConstraint.body2Id,dQlimit,delta_lambda) 
+            #             self.ApplyRotCorrectionPair(jointsConstraint.body1Id,jointsConstraint.body2Id,dQlimit,delta_lambda) 
 
-                #twist limits
-                if jointsConstraint.hasTwistLimit == 1:
-                    #update the quaterion
-                    q1= body1.transform.rotation
-                    q2= body2.transform.rotation
+            #     #twist limits
+            #     if jointsConstraint.hasTwistLimit == 1:
+            #         #update the quaterion
+            #         q1= body1.transform.rotation
+            #         q2= body2.transform.rotation
 
-                    a1=Quaterion.GetQuatAixs0(q1)
-                    a2=Quaterion.GetQuatAixs0(q2)
+            #         a1=Quaterion.GetQuatAixs0(q1)
+            #         a2=Quaterion.GetQuatAixs0(q2)
 
-                    b1=Quaterion.GetQuatAixs1(q1)
-                    b2=Quaterion.GetQuatAixs1(q2)
+            #         b1=Quaterion.GetQuatAixs1(q1)
+            #         b2=Quaterion.GetQuatAixs1(q2)
 
-                    n=tm.normalize(a1+a2)
-                    n1= b1- tm.dot(n,b1) * n
-                    n1=tm.normalize(n1)
-                    n2= b2- tm.dot(n,b2) * n
-                    n2=tm.normalize(n2)
+            #         n=tm.normalize(a1+a2)
+            #         n1= b1- tm.dot(n,b1) * n
+            #         n1=tm.normalize(n1)
+            #         n2= b2- tm.dot(n,b2) * n
+            #         n2=tm.normalize(n2)
 
-                    #handling gimbal lock proble
-                    #maxCorr= 2.0 * math.PI if tm.dot(a1,a2) > -0.5 else 1.0 * self.deltaTime
+            #         #handling gimbal lock proble
+            #         #maxCorr= 2.0 * math.PI if tm.dot(a1,a2) > -0.5 else 1.0 * self.deltaTime
 
-                    dQlimit = XPBDSolver.limitAngle(n,n1,n2,
-                      jointsConstraint.minSwingAngle,jointsConstraint.maxSwingAngle)
-                    if dQlimit.norm() > 0:
-                        delta_lambda = self.GetRotationDeltaLambda(jointsConstraint.body1Id,jointsConstraint.body2Id,dt,dQlimit,
-                                                jointsConstraint.compliance,jointsConstraint.lambda_total)
+            #         dQlimit = XPBDSolver.limitAngle(n,n1,n2,
+            #           jointsConstraint.minSwingAngle,jointsConstraint.maxSwingAngle)
+            #         if dQlimit.norm() > 0:
+            #             delta_lambda = self.GetRotationDeltaLambda(jointsConstraint.body1Id,jointsConstraint.body2Id,dt,dQlimit,
+            #                                     jointsConstraint.compliance,jointsConstraint.lambda_total)
 
-                        self.ApplyRotCorrectionPair(jointsConstraint.body1Id,jointsConstraint.body2Id,dQlimit,delta_lambda) 
-            #for joints has positional constraint
+            #             self.ApplyRotCorrectionPair(jointsConstraint.body1Id,jointsConstraint.body2Id,dQlimit,delta_lambda) 
+            # #for joints has positional constraint
 
 
 
@@ -395,6 +402,10 @@ class XPBDSolver:
     def InitConstraintLambda(self):
         for i in ti.grouped(self.constraintField):
             self.constraintField[i].lambda_total=0
+
+
+
+
     #after data init
     def Solver(self):
         dt = self.timeStep / self.numSubSteps
@@ -408,6 +419,8 @@ class XPBDSolver:
                 self.preSolve(dt,gravity,tm.vec3(0.0,0.0,0.0))
                 #constraint rigid body
                 self.SolveConstraint(dt)
+                #apply
+                #self.ApplyDelteLambda()
                 #get vec
                 self.UpdateAfterSolve(dt)
                 #solve vecolity
@@ -427,3 +440,17 @@ class XPBDSolver:
         self.UpdataWorldMatrix()
         return self.worldField
 
+
+    def GetKernerProfilerInfo(self):
+        Info = []
+
+        query_result = ti.profiler.query_kernel_profiler_info(self.preSolve .__name__) #[2]
+        Info.append([self.preSolve .__name__,query_result.counter,query_result.avg])
+
+        query_result = ti.profiler.query_kernel_profiler_info(self.SolveConstraint .__name__) #[2]
+        Info.append([self.SolveConstraint .__name__,query_result.counter,query_result.avg])
+
+        query_result = ti.profiler.query_kernel_profiler_info(self.UpdateAfterSolve.__name__) #[2]
+        Info.append([self.SolveConstraint .__name__,query_result.counter,query_result.avg])
+
+        return Info

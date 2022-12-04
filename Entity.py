@@ -18,6 +18,10 @@ class Entity:
     dynamicFircCoeff:ti.f32
     restitutionCoeff:ti.f32
 
+    #delta_p
+    # delta_pos:tm.vec3
+    # delta_rot:tm.vec4
+
     @ti.func
     def GetGeneralizedInvMass(self,normal:tm.vec3,r:tm.vec3) -> ti.f32:
         rn = tm.cross(r,normal)
@@ -64,7 +68,6 @@ class Entity:
             #atomic add
             self.transform.rotation += dq
             self.transform.rotation = Quaterion.Normalized(self.transform.rotation)
-
     
     @ti.func
     def ApplyPosCorrection(self,corr:tm.vec3,r:tm.vec3):
@@ -72,7 +75,10 @@ class Entity:
             #atomic add
             corrDelta_x = corr * self.invMass
             print(f"position(Poscorr):{corrDelta_x.x},{corrDelta_x.y},{corrDelta_x.z}")
+
             self.transform.position += corrDelta_x
+            #self.delta_pos += corrDelta_x
+
             iMatrix=self.GetWorldInvInertia()
             rp=tm.cross(r,corr)
 
@@ -83,6 +89,8 @@ class Entity:
             #atomic add
             self.transform.rotation += dq
             self.transform.rotation = Quaterion.Normalized(self.transform.rotation)
+            #self.delta_rot += dq
+            #self.delta_rot = Quaterion.Normalized(self.transform.rotation)
 
     # @ti.func
     # def ApplyVecCorrection(self,corr:tm.vec3,r:tm.vec3):
