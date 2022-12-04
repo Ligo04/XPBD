@@ -83,3 +83,15 @@
 - 四元数函数：https://github.com/Yihao-Shi/TaichiDEM/blob/version-updated/Quaternion.py
 
 In this case, the updates are accumulated and applied after each iteration through all constraints.  
+
+
+
+## Run 
+
+```
+pip install -r requirements.txt
+python demo_box.py
+//or
+demo_box_ser.py
+```
+

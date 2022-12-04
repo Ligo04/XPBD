@@ -74,7 +74,7 @@ if __name__ == '__main__':
     camera.lookat(0.0,4.0,0.0)
     #init scene mesh
     #InitPendulumScene(2)
-    masses = [1.0,10.0]
+    masses = [10.0,1.0]
     IniBodyChainScene(numBoxes,masses,initPos=tm.vec3(0,1,0),detla_x = 1.5)
     #InitPendulumScene(numPendulum,initTopPos)
     #init XPBDSolver
