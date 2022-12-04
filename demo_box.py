@@ -88,6 +88,7 @@ if __name__ == '__main__':
              isSolving = gui.checkbox("Run or Stop",isSolving)
              gui.text("mass 1:1 kg")
              gui.text("mass 2:10 kg")
+             gui.text("distance constraint: 1.1m")
              #isSolving = gui.button("Run or Stop")
 
         xpbd.SetDtAndNumsubStep(timeStep,numSubSteps)
