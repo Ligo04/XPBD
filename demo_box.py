@@ -10,9 +10,7 @@ numSubSteps = 5
 
 #
 center_x = tm.vec3(0,0,0)
-
 numBoxes = 2
-numPendulum = 1
 initTopPos = tm.vec3(0,4,0)
 #solver rigid body data
 bodyList=[]
@@ -30,7 +28,7 @@ def IniBodyChainScene(numBoxes,masses,initPos=tm.vec3(0,0,0),detla_x=0):
     boxModel = Model("models/box.obj",color=(0.5,0.5,0.5))
     bodyIdStart = len(bodyList)
     compliance= 0.01
-    maxdistance = 1.0
+    maxdistance = 1.1
     #add shpere
     for i in range(numBoxes):
         pos = pos + tm.vec3(0,detla_x,0)
@@ -41,7 +39,7 @@ def IniBodyChainScene(numBoxes,masses,initPos=tm.vec3(0,0,0),detla_x=0):
         
         #add top shpere
         if i == numBoxes-1:
-            spherePos = pos + tm.vec3(0.0,detla_x *2 ,0.0)
+            spherePos = pos + tm.vec3(0.0,detla_x,0.0)
             sphere = RigidBody(spherePos,1.0,fixed=1)
             bodyList.append(sphere)
             entities.append(sphere.entity)
@@ -54,52 +52,6 @@ def IniBodyChainScene(numBoxes,masses,initPos=tm.vec3(0,0,0),detla_x=0):
 
         constraint = Constraints.field(shape=())
         constraint[None].InitDistanceConstraint(body1Id,body2Id,center_x,center_x,maxdistance,compliance)
-        constraintList.append(constraint)
-
-
-#init scene data
-def InitPendulumScene(numPendulum,initPos=tm.vec3(0,0,0),delta_x = 0.6):
-    #init floor
-    floorModel = Model("models/floor.obj",color=(0.5,0.5,0.5))
-    floor = RigidBody(tm.vec3(0,-1,0),1.0,floorModel,fixed=1,quaterion=Quaterion.Identity())
-    bodyList.append(floor)
-    entities.append(floor.entity)
-    lever = Model("models/lever.obj",color=(0.5,0.5,0.5))
-    #constarint init 
-    compliance= 0
-    dis = 0.1
-    maxdistance = 0.5
-
-    #add shphere
-    spherePos = initPos
-    sphere = RigidBody(spherePos,1.0,fixed=1)
-    bodyList.append(sphere)
-    entities.append(sphere.entity)
-    r1 = tm.vec3(0,-0.3,0)
-    r2 = tm.vec3(0,0.3,0)
-    for i in range(numPendulum):
-        body1Id = len(bodyList) - 1
-        if i != 0:
-            spherePos -= tm.vec3(0,delta_x + dis ,0)
-            r1 = tm.vec3(0,-0.3,0)
-        else:
-            spherePos -= tm.vec3(0,delta_x/2 + dis,0)
-            r1 = tm.vec3(0,0,0)
-        
-        
-        body = RigidBody(spherePos,1.0,lever,
-                        inertia=RigidBody.GetBoxInertia(1.0,0.1,0.6,0.1))
-
-        #body.SetRotationLocationZ(math.pi/2)
-        bodyList.append(body)
-        entities.append(body.entity)
-        print(body.entity[None].transform.rotation[2])
-        print(body.entity[None].transform.rotation[3])
-        body2Id = len(bodyList) - 1
-
-        #joint constraint
-        constraint = Constraints.field(shape=())
-        constraint[None].InitHingeConstraint(body1Id,body2Id,r1,r2,maxdistance,compliance)
         constraintList.append(constraint)
 
 #init xpbdSolver
@@ -123,7 +75,7 @@ if __name__ == '__main__':
     #init scene mesh
     #InitPendulumScene(2)
     masses = [1.0,10.0]
-    IniBodyChainScene(numBoxes,masses,initPos=tm.vec3(0,1,0),detla_x = 1.2)
+    IniBodyChainScene(numBoxes,masses,initPos=tm.vec3(0,1,0),detla_x = 1.5)
     #InitPendulumScene(numPendulum,initTopPos)
     #init XPBDSolver
     xpbd = InitXPBDSolver()
@@ -134,6 +86,8 @@ if __name__ == '__main__':
         with gui.sub_window("gui", 0, 0, 0.3, 0.2):
              numSubSteps = gui.slider_int("numSubSteps",numSubSteps,1,50)
              isSolving = gui.checkbox("Run or Stop",isSolving)
+             gui.text("mass 1:1 kg")
+             gui.text("mass 2:10 kg")
              #isSolving = gui.button("Run or Stop")
 
         xpbd.SetDtAndNumsubStep(timeStep,numSubSteps)
@@ -165,9 +119,6 @@ if __name__ == '__main__':
         canvas.scene(scene)
         window.show()
         frame +=1
-
-        #if frame==2:
-            #window.running = False
 
 
 

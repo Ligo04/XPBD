@@ -12,7 +12,7 @@ class Constraints:
 
     compliance:ti.f32
     #pos constraint
-    maxDistance:ti.f32
+    maxDistance:ti.f32    # for joint and distance
     lambda_total:ti.f32
 
     #collision constraint
@@ -22,18 +22,21 @@ class Constraints:
 
     #Joints  constraint
     jointType:ti.f32          #0: fixed  1:hinge 2:sphere
+    jointCompliance:ti.f32
+    #hinge
+    axes:ti.i32             #0:x  1:y  22:z
     #Swing Limit
     hasSwingLimit:ti.i32
     minSwingAngle:ti.f32
     maxSwingAngle:ti.f32
-    SwingLimitCompliance:ti.f32
+    SwingLimitCompliance:ti.f32    
     #TwingLimit
     hasTwistLimit:ti.i32
     minTwistAngle:ti.f32
     maxTwistAngle:ti.f32
     TwistLimitCompliance:ti.f32
 
-    def InitPosConstraint(self,body1Id:ti.i32,body2Id:ti.i32,r1:tm.vec3,r2:tm.vec3,
+    def InitDistanceConstraint(self,body1Id:ti.i32,body2Id:ti.i32,r1:tm.vec3,r2:tm.vec3,
         maxDistance:tm.vec3,compliance:ti.f32):
         self.conType = 0
         self.body1Id = body1Id
@@ -59,7 +62,7 @@ class Constraints:
         self.lambda_n=0
         self.compliance=0
 
-    def InitFixedConstraint(self,body1Id:ti.i32,body2Id:ti.i32,r1:tm.vec3,r2:tm.vec3,compliance:ti.f32):
+    def InitFixedConstraint(self,body1Id:ti.i32,body2Id:ti.i32,r1:tm.vec3,r2:tm.vec3,maxDistance:ti.f32,compliance:ti.f32):
         self.conType = 2
         self.jointType = 0
         self.body1Id = body1Id
@@ -67,13 +70,17 @@ class Constraints:
 
         self.r1= r1
         self.r2= r2
+        self.maxDistance = maxDistance
         self.compliance = compliance
 
-    def InitHingeConstraint(self,body1Id:ti.i32,body2Id:ti.i32,r1:tm.vec3,r2:tm.vec3,compliance:ti.f32,
-                    hasSwingLimit:ti.i32,
-                    minSwingAngle:ti.f32,
-                    maxSwingAngle:ti.f32,
-                    SwingLimitCompliance:ti.f32):
+    def InitHingeConstraint(self,body1Id:ti.i32,body2Id:ti.i32,r1:tm.vec3,r2:tm.vec3,
+                    maxDistance:ti.f32,
+                    compliance:ti.f32,
+                    axes=0,
+                    hasSwingLimit=0,
+                    minSwingAngle=0.0,
+                    maxSwingAngle=0.0,
+                    SwingLimitCompliance=0.0):
         
         self.conType = 2
         self.jointType = 1
@@ -82,7 +89,8 @@ class Constraints:
 
         self.r1= r1
         self.r2= r2
-        self.compliance = compliance
+        self.maxDistance = maxDistance
+        self.jointCompliance = compliance
         self.hasSwingLimit=hasSwingLimit
         self.minSwingAngle=minSwingAngle
         self.maxSwingAngle=maxSwingAngle

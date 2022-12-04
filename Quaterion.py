@@ -4,7 +4,7 @@ import math
 
 #python-scope
 def Identity():
-    return ti.Vector([0,0,0,1])
+    return ti.Vector([0.0,0.0,0.0,1.0],dt=ti.f32)
 
 # ================================= Operator ===================================== #
 @ti.func
@@ -49,6 +49,12 @@ def Normalized(q):
         qr = q.normalized()
     return qr
 
+@ti.func
+def NormalizedPy(q):
+    qr = ti.Matrix.zero(float, 4, 1)
+    if q.norm() > 0.:
+        qr = q.normalized()
+    return qr
 
 # ============================================== Method ========================================== #
 @ti.func
@@ -109,7 +115,7 @@ def GetQuatAixs2(q):
     z2=q[2] * 2.0
     w2=q[3] * 2.0
 
-    return ti.Vector([(q[1] * w2) + q[0] * z2
+    return ti.Vector([(q[1] * w2) + q[0] * z2,
                       (-q[0] * w2) + q[1] * z2,
                       (q[3] * w2) - 1.0 + q[2] * z2])  
 
@@ -142,7 +148,15 @@ def SetFromValue(qx, qy, qz, qw):
 @ti.func
 def SetFromAxisAngle(axis, radians):
     leng = Length(axis)
-    halfSin = ti.sin(0.5 * radians) / leng;
+    halfSin = ti.sin(0.5 * radians) / leng
+    return ti.Vector([axis[0] * halfSin,
+                      axis[1] * halfSin,
+                      axis[2] * halfSin,
+                      ti.cos(0.5 * radians)])
+
+def SetFromAxisAnglePy(axis, radians):
+    leng = axis.norm()
+    halfSin = math.sin(0.5 * radians) / leng
     return ti.Vector([axis[0] * halfSin,
                       axis[1] * halfSin,
                       axis[2] * halfSin,

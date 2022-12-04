@@ -82,3 +82,4 @@
 - model类：https://github.com/MicroappleMA/path_tracing_obj/blob/master/path_tracing_obj.py
 - 四元数函数：https://github.com/Yihao-Shi/TaichiDEM/blob/version-updated/Quaternion.py
 
+In this case, the updates are accumulated and applied after each iteration through all constraints.  

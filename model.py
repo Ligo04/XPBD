@@ -112,7 +112,9 @@ class Model:
 
 @ti.data_oriented
 class RigidBody:
-    def __init__(self,position:tm.vec3,mass:ti.f32,model=None,fixed=0,inertia=tm.vec3(1,1,1),vec=tm.vec3(0,0,0),
+    def __init__(self,position:tm.vec3,mass:ti.f32,model=None,fixed=0,quaterion=Quaterion.Identity(),
+                    scale=tm.vec3(1,1,1),
+                    inertia=tm.vec3(1,1,1),vec=tm.vec3(0,0,0),
                     omega=tm.vec3(0,0,0),staticFric=0,dynmanicFric=0,restitutionC=0) -> None:
         self.model = model
         if model is not None:
@@ -120,7 +122,14 @@ class RigidBody:
         else:
             self.worldVectices = ti.Vector.field(3, dtype=ti.f32, shape= 1)
             self.worldVectices[0] = position
-        self.entity = RigidBody.CreateEntity(position,mass,fixed,inertia,vec,omega,staticFric,dynmanicFric,restitutionC)
+        self.entity = RigidBody.CreateEntity(position,mass,fixed,inertia,quaterion,scale,
+                        vec,omega,staticFric,dynmanicFric,restitutionC)
+
+    @ti.kernel
+    def SetRotationLocationZ(self,radians:ti.f32) :
+        axis = self.entity[None].transform.GetWorldMatrix() @ tm.vec4(0,0,1,0)
+        q = Quaterion.SetFromAxisAngle(axis.xyz,radians)
+        self.entity[None].transform.rotation = q
 
     @ti.kernel
     def GetWorlMatrix(self)->tm.mat4:
@@ -135,13 +144,14 @@ class RigidBody:
         return self.worldVectices,self.model.indices,self.model.normal,color
 
     @staticmethod
-    def CreateEntity(position:tm.vec3,mass:ti.f32,fixed=0,inertia=tm.vec3(1,1,1),
+    def CreateEntity(position:tm.vec3,mass:ti.f32,fixed=0,inertia=tm.vec3(1,1,1),quaterion=Quaterion.Identity(),
+                    scale=tm.vec3(1,1,1),
                 vec=tm.vec3(0,0,0),omega=tm.vec3(0,0,0),staticFric=0,dynmanicFric=0,restitutionC=0):
         data = Entity.field(shape=())
         data[None].fixed = fixed
         data[None].invMass = 1.0 / mass
         data[None].invInertia = tm.vec3(1/inertia[0],1/inertia[1],1/inertia[2])
-        wolrdTranform = Transform(position,Quaterion.Identity(),tm.vec3(1,1,1))
+        wolrdTranform = Transform(position,quaterion,scale)
         data[None].transform = wolrdTranform
         data[None].vec =vec
         data[None].omega= omega
