@@ -74,8 +74,6 @@ class Entity:
         if self.fixed == 0:
             #atomic add
             corrDelta_x = corr * self.invMass
-            print(f"position(Poscorr):{corrDelta_x.x},{corrDelta_x.y},{corrDelta_x.z}")
-
             self.transform.position += corrDelta_x
             #self.delta_pos += corrDelta_x
 
@@ -89,20 +87,14 @@ class Entity:
             #atomic add
             self.transform.rotation += dq
             self.transform.rotation = Quaterion.Normalized(self.transform.rotation)
-            #self.delta_rot += dq
-            #self.delta_rot = Quaterion.Normalized(self.transform.rotation)
 
-    # @ti.func
-    # def ApplyVecCorrection(self,corr:tm.vec3,r:tm.vec3):
-    #     self.vec += corr*self.invMass
-    #     deltaOmega = tm.cross(r,corr)
-    #     invInertia = self.invInertia
-    #     iMatrix=tm.mat3(invInertia.x,0.0,0.0,
-    #                     0.0,invInertia.y,0.0,
-    #                     0.0,0.0,invInertia.z)
+    @ti.func
+    def ApplyVecCorrection(self,corr:tm.vec3,r:tm.vec3):
+        self.vec += corr*self.invMass
+        deltaOmega = tm.cross(r,corr)
+        iMatrix=self.GetWorldInvInertia()
 
-    #     iDeltaOmega= iMatrix @ deltaOmega
-    #     deltaOmega = tm.vec3(iDeltaOmega.x,iDeltaOmega.y,iDeltaOmega.z)
+        iDeltaOmega= iMatrix @ deltaOmega
 
-    #     self.omega += deltaOmega
+        self.omega += iDeltaOmega
     

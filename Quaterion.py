@@ -1,6 +1,5 @@
 import taichi as ti
 import math
-# https://api.flutter.dev/flutter/vector_math/Quaternion/setAxisAngle.html
 
 #python-scope
 def Identity():
@@ -179,30 +178,6 @@ def SetFromEuler(yaw, pitch, roll):
                       sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw,
                       cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw])
 
-
-# @ti.func
-# def SetFromRotation(rotationMatrixStorage):
-#     q = ti.Matrix.zero(float, 4, 1)
-#     trace = rotationMatrix.trace()
-#     if trace > 0.:
-#         s = ti.sqrt(trace + 1.0);
-#         q[3] = 0.5 * s
-#         q[0] = 0.5 * (rotationMatrixStorage[5] - rotationMatrixStorage[7]) / s
-#         q[1] = 0.5 * (rotationMatrixStorage[6] - rotationMatrixStorage[2]) / s
-#         q[2] = 0.5 * (rotationMatrixStorage[1] - rotationMatrixStorage[3]) / s
-#     else:
-#         i = rotationMatrixStorage[0] < rotationMatrixStorage[4]
-#             ? (rotationMatrixStorage[4] < rotationMatrixStorage[8] ? 2 : 1)
-#             : (rotationMatrixStorage[0] < rotationMatrixStorage[8] ? 2 : 0)
-#         j = (i + 1) % 3;
-#         k = (i + 2) % 3;
-#         s = ti.sqrt(rotationMatrixStorage[rotationMatrixStorage.index(i, i)]
-#                     -rotationMatrixStorage[rotationMatrixStorage.index(j, j)]
-#                     -rotationMatrixStorage[rotationMatrixStorage.index(k, k)] + 1.0)
-#         q[i] = 0.5 * s;
-#         q[3] = 0.5 * (rotationMatrixStorage[rotationMatrixStorage.index(k, j)] - rotationMatrixStorage[rotationMatrixStorage.index(j, k)]) / s
-#         q[j] = 0.5 * (rotationMatrixStorage[rotationMatrixStorage.index(j, i)] + rotationMatrixStorage[rotationMatrixStorage.index(i, j)]) / s
-#         q[k] = 0.5 * (rotationMatrixStorage[rotationMatrixStorage.index(k, i)] + rotationMatrixStorage[rotationMatrixStorage.index(i, k)]) / s
   
 
 @ti.func

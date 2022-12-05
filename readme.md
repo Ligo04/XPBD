@@ -12,7 +12,7 @@
 
 - 功能一：实现论文中提到的两个核心的投影操作
 - 功能二：处理铰链关节，球状关节以及移动关节，并限制其自由度(关节约束，距离约束)
-- 功能三：完成刚体碰撞检测（做不了啦。abancon）
+- 功能三：完成刚体碰撞检测（做不了啦。abandon）
 - 功能四：能够自然处理刚体间的接触与摩擦（碰撞约束）
 
 使用这个刚体求解器实现一些简单的场景（场景在设想，目前采取论文中的实验：
@@ -34,6 +34,8 @@
   ![image-20221123212724738](https://img2022.cnblogs.com/blog/1656870/202211/1656870-20221123212726614-1777701870.png)
 
 **实现的类：**
+- Quaternion：四元数
+  - 四元数函数
 
 - Transfrom类（ti.dataclass）：用于表示刚体与关节的欧式变换，
   - 位置，缩放（世界）：3D vector
@@ -43,7 +45,7 @@
   - 成员：逆质量，逆转动惯量，transfrom（当前，上一帧），速度，角速度，静摩擦系数，动摩擦系数，修复系数，
   - 函数：应用位置修正，应用旋转修正，应用速度修正，获取广义逆质量等
   
-- Model类型（ti.data_oriented）：加载obj模型
+- Model类型（ti.data_oriented）：加载3D模型(目前加载obj模型)
   
 - Rigiboody类（ti.data_oriented）: 包含一个Model 以及 一个Enitiy
   
@@ -82,9 +84,6 @@
 - model类：https://github.com/MicroappleMA/path_tracing_obj/blob/master/path_tracing_obj.py
 - 四元数函数：https://github.com/Yihao-Shi/TaichiDEM/blob/version-updated/Quaternion.py
 
-In this case, the updates are accumulated and applied after each iteration through all constraints.  
-
-
 
 ## Run 
 
@@ -92,6 +91,6 @@ In this case, the updates are accumulated and applied after each iteration throu
 pip install -r requirements.txt
 python demo_box.py
 //or
-demo_box_ser.py
+python demo_box_ser.py
 ```
 
