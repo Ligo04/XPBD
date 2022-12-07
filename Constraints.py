@@ -10,10 +10,10 @@ class Constraints:
     r1:tm.vec3
     r2:tm.vec3
 
-    compliance:ti.f32
+    compliance:ti.f32     #for evert constraint
     #pos constraint
-    maxDistance:ti.f32    # for joint and distance
-    lambda_total:ti.f32
+    maxDistance:ti.f32    # for position constraint
+    lambda_total:tm.vec3   # for calc force
 
     #collision constraint
     contact_normal:tm.vec3
@@ -47,8 +47,6 @@ class Constraints:
 
         self.maxDistance=maxDistance
         self.compliance=compliance
-
-        self.lambda_total=0
 
     def InitCollisionConstraint(self,body1Id:ti.i32,body2Id:ti.i32,r1:tm.vec3,r2:tm.vec3,normal:tm.vec3):
         self.conType = 1

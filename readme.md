@@ -11,7 +11,7 @@
 **想要实现的功能（期望达到的效果）：**  使用taichi实现一个通用的基于XPBD的刚体求解器，能够处理刚体之间的接触，各种关节以及与软物体的相互作用。
 
 - 功能一：实现论文中提到的两个核心的投影操作
-- 功能二：处理铰链关节，球状关节以及移动关节，并限制其自由度(关节约束，距离约束)
+- 功能二：处理铰链关节，球状关节以及移动关节，并限制其自由度(关节约束，距离约束)(**关节约束还有些问题卡着，待后续完善**)
 - 功能三：完成刚体碰撞检测（做不了啦。abandon）
 - 功能四：能够自然处理刚体间的接触与摩擦（碰撞约束）
 
@@ -79,18 +79,42 @@
 
 目前打算使用的TAICHIGAME的开源库进行碰撞检测，但是他有个问题计算太慢了（没有采用taichi加速）
 
-## 使用的开源库
-
-- model类：https://github.com/MicroappleMA/path_tracing_obj/blob/master/path_tracing_obj.py
-- 四元数函数：https://github.com/Yihao-Shi/TaichiDEM/blob/version-updated/Quaternion.py
-
 
 ## Run 
 
 ```
 pip install -r requirements.txt
-python demo_box.py
-//or
-python demo_box_ser.py
 ```
 
+按照目前的复现的，目前提供了两个场景：
+
+1. 三摆场景：
+
+   ```
+   python demo_threePendulum.py
+   ```
+
+   ![image-20221207195244207](https://img2023.cnblogs.com/blog/1656870/202212/1656870-20221207195244537-1257811328.png)
+
+2. 盒子：
+
+   ```
+   python demo_box.py
+   ```
+
+   ![image-20221207195430151](https://img2023.cnblogs.com/blog/1656870/202212/1656870-20221207195430462-1631538396.png)
+
+由于笔者采用GS迭代，但是又没有实现并行化版本的GS,在多个约束或者多次迭代时候很多概率约束求解不正确，目前场景提供的标准的numsubStep=5时是效果最好的。（CPU并行）
+
+### Benmark（估摸）
+
+CPU：i7-12700H
+
+GPU：NVIDIA GeForce RTX 3070 Laptop GPU
+
+|                     | numSubStep=5 | numSubStep=10 |
+| ------------------- | ------------ | ------------- |
+| Boxes(CPU)          | 80FPS        | 60FPS         |
+| Boxes(GPU)          | 43FPS        | 30FPS         |
+| Three pendulum(CPU) | 60FPS        | 48FPS         |
+| Three pendulum(GPU) | 35FPS        | 24FPS         |

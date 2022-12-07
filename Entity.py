@@ -18,10 +18,6 @@ class Entity:
     dynamicFircCoeff:ti.f32
     restitutionCoeff:ti.f32
 
-    #delta_p
-    # delta_pos:tm.vec3
-    # delta_rot:tm.vec4
-
     @ti.func
     def GetGeneralizedInvMass(self,normal:tm.vec3,r:tm.vec3) -> ti.f32:
         rn = tm.cross(r,normal)
@@ -64,37 +60,42 @@ class Entity:
             iP = iMatrix @ corr
             dq = Quaterion.SetFromValue(iP.x,iP.y,iP.z,0.0)
             dq = 0.5*Quaterion.Multiply(dq,self.transform.rotation)
-            print(f"dq(rotCorr):{dq.x},{dq.y},{dq.z}")
+            #print(f"dq(rotCorr):{dq.x},{dq.y},{dq.z}")
             #atomic add
             self.transform.rotation += dq
-            self.transform.rotation = Quaterion.Normalized(self.transform.rotation)
+            #self.transform.rotation = Quaterion.Normalized(self.transform.rotation)         #doesn't need
     
     @ti.func
     def ApplyPosCorrection(self,corr:tm.vec3,r:tm.vec3):
         if self.fixed == 0:
+            #print(f"p:{corr.x},{corr.y},{corr.z}")
+            #print(f"r(PosCorr):{r.x},{r.y},{r.z}")
             #atomic add
             corrDelta_x = corr * self.invMass
             self.transform.position += corrDelta_x
+            #print(f"deltaX(PosCorr):{corrDelta_x.x},{corrDelta_x.y},{corrDelta_x.z}")
             #self.delta_pos += corrDelta_x
-
             iMatrix=self.GetWorldInvInertia()
             rp=tm.cross(r,corr)
-
+            #print(f"rp(PosCorr):{rp.x},{rp.y},{rp.z}")
             iRp = iMatrix @ rp
+            #print(f"iRp(PosCorr):{iRp.x},{iRp.y},{iRp.z}")
             dq = Quaterion.SetFromValue(iRp.x,iRp.y,iRp.z,0.0)
             dq = 0.5 * Quaterion.Multiply(dq,self.transform.rotation)
-            print(f"dq(Poscorr):{dq.x},{dq.y},{dq.z}")
+            #print(f"dq(PosCorr):{dq.x},{dq.y},{dq.z},{dq.w}")
             #atomic add
+            #print(f"rotation(before):{self.transform.rotation.x},{self.transform.rotation.y},{self.transform.rotation.z},{self.transform.rotation.w}")
             self.transform.rotation += dq
-            self.transform.rotation = Quaterion.Normalized(self.transform.rotation)
+            #self.transform.rotation = Quaterion.Normalized(self.transform.rotation)            #doesn't need
+            #print(f"rotation(after):{self.transform.rotation.x},{self.transform.rotation.y},{self.transform.rotation.z},{self.transform.rotation.w}")
 
     @ti.func
     def ApplyVecCorrection(self,corr:tm.vec3,r:tm.vec3):
         self.vec += corr*self.invMass
-        deltaOmega = tm.cross(r,corr)
-        iMatrix=self.GetWorldInvInertia()
+        rp = tm.cross(r,corr)
+        invIMatrix=self.GetWorldInvInertia()
 
-        iDeltaOmega= iMatrix @ deltaOmega
+        iDeltaOmega = invIMatrix @ rp
 
         self.omega += iDeltaOmega
     

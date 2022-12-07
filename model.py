@@ -127,18 +127,26 @@ class RigidBody:
 
     @ti.kernel
     def SetRotationLocationZ(self,radians:ti.f32) :
-        axis = self.entity[None].transform.GetWorldMatrix() @ tm.vec4(1,0,0,0)
-        print(f"aixs:{axis.x},{axis.y},{axis.z},{axis.z}")
+        axis = self.entity[None].transform.GetWorldMatrix() @ tm.vec4(0,0,1,0)
         q = Quaterion.SetFromAxisAngle(axis.xyz,radians)
-        self.entity[None].transform.rotation = q
+        self.entity[None].transform.rotation = Quaterion.Multiply( self.entity[None].transform.rotation,q)
+
+
+    @ti.kernel
+    def SetRotationLocationX(self,radians:ti.f32) :
+        axis = self.entity[None].transform.GetWorldMatrix() @ tm.vec4(1,0,0,0)
+        q = Quaterion.SetFromAxisAngle(axis.xyz,radians)
+        self.entity[None].transform.rotation = Quaterion.Multiply( self.entity[None].transform.rotation,q)
 
     @ti.kernel
     def GetWorlMatrix(self)->tm.mat4:
         return self.entity[None].transform.GetWorldMatrix()
 
-    def GetSceneData(self,matrix=None):
-        if matrix is None:
-            self.model.GetVertexFormWolrdMat(self.GetWorlMatrix(),self.worldVectices)
+    def GetModelData(self,matrix=None):
+        if self.model is None:
+            vectex=tm.vec4(self.worldVectices[0],1.0)
+            self.worldVectices[0] = tm.vec3((matrix @ vectex).xyz)
+            return self.worldVectices,None,None,None
         else:
             self.model.GetVertexFormWolrdMat(matrix,self.worldVectices)
         color = (self.model.color[None].x,self.model.color[None].y,self.model.color[None].z)
@@ -150,8 +158,14 @@ class RigidBody:
                 vec=tm.vec3(0,0,0),omega=tm.vec3(0,0,0),staticFric=0,dynmanicFric=0,restitutionC=0):
         data = Entity.field(shape=())
         data[None].fixed = fixed
-        data[None].invMass = 1.0 / mass
-        data[None].invInertia = tm.vec3(1/inertia[0],1/inertia[1],1/inertia[2])
+        if mass == 0:
+            data[None].invMass = 0.0
+        else:
+            data[None].invMass = 1.0 / mass
+        if inertia[1] == 0:
+            data[None].invInertia = tm.vec3(1/inertia[0],inertia[1],1/inertia[2])
+        else:
+            data[None].invInertia = tm.vec3(1/inertia[0],1/inertia[1],1/inertia[2])
         wolrdTranform = Transform(position,quaterion,scale)
         data[None].transform = wolrdTranform
         data[None].vec =vec
@@ -174,4 +188,8 @@ class RigidBody:
                         (2.0/5.0)*mass*(radius**2)) 
 
 
-    
+    @staticmethod
+    def GetRodInertia(mass,length)->tm.vec3:
+        return tm.vec3((1.0/3.0)*mass*(length**2),
+                        0,
+                        (1.0/3.0)*mass*(length**2)) 

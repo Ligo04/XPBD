@@ -15,4 +15,4 @@ class Transform:
         translateMat=tm.translate(self.position[0],self.position[1],self.position[2])
         rotationMat=Quaterion.SetToRotate(self.rotation)
         scaleMat = tm.scale(self.scale[0],self.scale[1],self.scale[2])
-        return scaleMat @ rotationMat @ translateMat
+        return translateMat @ rotationMat @ scaleMat

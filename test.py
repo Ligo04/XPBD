@@ -1,47 +1,48 @@
 import taichi as ti
-from Entity import *
-ti.init()
 
-# x=Entity.field()
-# ti.root.dense(ti.i,1000000).place(x)
-# total=Entity.field()
-# ti.root.dense(ti.i,1).place(total)
-# x.fill(1)
+ti.init(arch=ti.cuda)
 
-# @ti.func
-# def test1(total:ti.template(),x:ti.f32):
-#     total.transform.position = tm.vec3(x,x,x)
+N = 10
 
-# @ti.kernel  
-# def sum():
-#     for i in x:
-#         #test1(total,x[i])
-#         # Approach 1: OK
-#         #total[None] += x[i]
-  
-#         # # Approach 2: OK
-#         # ti.atomic_add(total[None], x[i])
+particles_pos = ti.Vector.field(3, dtype=ti.f32, shape = N)
+points_pos = ti.Vector.field(3, dtype=ti.f32, shape = N)
+points_indices = ti.Vector.field(1, dtype=ti.i32, shape = N)
 
-#         # # Approach 3: Wrong result since the operation is not atomic.
-#         #total[None] = total[None] + x[i]
-#         test1(total[0],i)
-#     print(total[0].transform.position.x)
-#     print(total[0].transform.position.y)
-#     print(total[0].transform.position.z)
+@ti.kernel
+def init_points_pos(points : ti.template()):
+    for i in range(points.shape[0]):
+        points[i] = [i for j in range(3)]
+        # points[i] = [ti.sin(i * 1.0), i * 0.2, ti.cos(i * 1.0)]
 
-x=tm.vec3(1,0,0)
-y=tm.vec3(0,1,0)
-z=tm.vec3(0,0,1)
+@ti.kernel
+def init_points_indices(points_indices : ti.template()):
+    for i in range(N):
+        points_indices[i][0] = i // 2 + i % 2
 
-total = ((x+y).normalized() + z).normalized()
-print(total.x)
-print(total.y)
-print(total.z)
+init_points_pos(particles_pos)
+init_points_pos(points_pos)
+init_points_indices(points_indices)
 
-total1 = (x+y+z).normalized()
-print(total1.x)
-print(total1.y)
-print(total1.z)
+window = ti.ui.Window("Test for Drawing 3d-lines", (768, 768))
+canvas = window.get_canvas()
+scene = ti.ui.Scene()
+camera = ti.ui.Camera()
+camera.position(5, 2, 2)
 
-m=ti.Matrix()
+while window.running:
+    camera.track_user_inputs(window, movement_speed=0.03, hold_key=ti.ui.RMB)
+    scene.set_camera(camera)
+    scene.ambient_light((0.8, 0.8, 0.8))
+    scene.point_light(pos=(0.5, 1.5, 1.5), color=(1, 1, 1))
 
+    scene.particles(particles_pos, color = (0.68, 0.26, 0.19), radius = 0.1)
+    # Here you will get visible part from the 3rd point with (N - 4) points.
+    scene.lines(points_pos, color = (0.28, 0.68, 0.99), width = 5.0)
+    # Using indices to indicate which vertex to use
+    # scene.lines(points_pos, color = (0.28, 0.68, 0.99), width = 5.0, indices = points_indices)
+    # Case 1, vertex_count will be changed to N - 2 when drawing.
+    # scene.lines(points_pos, color = (0.28, 0.68, 0.99), width = 5.0, vertex_count = N - 1, vertex_offset = 0)
+    # Case 2, vertex_count will be changed to N - 2 when drawing.
+    # scene.lines(points_pos, color = (0.28, 0.68, 0.99), width = 5.0, vertex_count = N, vertex_offset = 2)
+    canvas.scene(scene)
+    window.show()
