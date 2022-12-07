@@ -106,7 +106,7 @@ pip install -r requirements.txt
 
 由于笔者采用GS迭代，但是又没有实现并行化版本的GS,在多个约束或者多次迭代时候很多概率约束求解不正确，目前场景提供的标准的numsubStep=5时是效果最好的。（CPU并行）
 
-### Benmark（估摸）
+### Benchmark(估摸)
 
 CPU：i7-12700H
 
